@@ -87,13 +87,14 @@ router.post('/login', async (req, res, next) => {
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN }
       );
-  
+      const crypto = require('crypto');
+      const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   
       await pool.query(
         `INSERT INTO sessions (user_id, token, expires_at)
          VALUES ($1, $2, $3)`,
-        [user.user_id, token, expiresAt]
+        [user.user_id, hashToken(token), expiresAt]
       );
   
       res.json({
@@ -109,5 +110,5 @@ router.post('/login', async (req, res, next) => {
       next(err);
     }
   });
-  
+
 module.exports = router;
