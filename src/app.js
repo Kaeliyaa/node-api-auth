@@ -13,19 +13,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Global error handler — always last
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
 const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 
@@ -40,3 +27,16 @@ app.use('/sessions', sessionsRoutes);
 
 const resultsRoutes = require('./routes/results');
 app.use('/results', resultsRoutes);
+
+// Global error handler — always last
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error'
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

@@ -50,6 +50,14 @@ router.post('/:sessionId', async (req, res, next) => {
       return res.status(400).json({ error: 'Value must be a number' });
     }
 
+    if (name.length > 100) {
+        return res.status(400).json({ error: 'Name must be 100 characters or fewer' });
+    }
+
+    if (Math.abs(value) > 1e15) {
+        return res.status(400).json({ error: 'Value out of acceptable range' });
+    }
+    
     const owns = await verifySessionOwnership(req.params.sessionId, req.user.user_id);
     if (!owns) {
       return res.status(404).json({ error: 'Session not found' });
