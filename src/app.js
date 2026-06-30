@@ -34,3 +34,6 @@ const authMiddleware = require('./middleware/auth');
 app.get('/protected', authMiddleware, (req, res) => {
   res.json({ message: 'You are authenticated', user_id: req.user.user_id });
 });
+
+const sessionsRoutes = require('./routes/sessions');
+app.use('/sessions', sessionsRoutes);
