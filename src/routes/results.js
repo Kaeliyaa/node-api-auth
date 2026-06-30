@@ -55,16 +55,6 @@ router.post('/:sessionId', async (req, res, next) => {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    // Enforce max 50 results per session
-    const countResult = await pool.query(
-      'SELECT COUNT(*) FROM results WHERE session_id = $1',
-      [req.params.sessionId]
-    );
-
-    if (parseInt(countResult.rows[0].count, 10) >= 50) {
-      return res.status(400).json({ error: 'Maximum of 50 results per session reached' });
-    }
-
     const insertResult = await pool.query(
       `INSERT INTO results (session_id, name, value)
        VALUES ($1, $2, $3)
@@ -74,6 +64,9 @@ router.post('/:sessionId', async (req, res, next) => {
 
     res.status(201).json(insertResult.rows[0]);
   } catch (err) {
+    if (err.message.includes('Maximum of 50 results')) {
+      return res.status(400).json({ error: 'Maximum of 50 results per session reached' });
+    }
     next(err);
   }
 });
