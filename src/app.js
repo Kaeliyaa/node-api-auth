@@ -37,3 +37,6 @@ app.get('/protected', authMiddleware, (req, res) => {
 
 const sessionsRoutes = require('./routes/sessions');
 app.use('/sessions', sessionsRoutes);
+
+const resultsRoutes = require('./routes/results');
+app.use('/results', resultsRoutes);
