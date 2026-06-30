@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/pool');
@@ -176,8 +177,18 @@ router.post('/reset-password/request', async (req, res, next) => {
       [resetTokenHash, expiresAt, user.user_id]
     );
 
-    // Returned in response for now — will be replaced with email sending
-    res.json({ ...genericResponse, resetToken });
+    try {
+
+      await sendResetEmail(email, resetToken);
+    
+    } catch (emailErr) {
+    
+      console.error('Failed to send reset email:', emailErr);
+    
+      // Don't leak email failure to client — still return generic response
+    
+    }
+    res.json(genericResponse);
 
   } catch (err) {
     next(err);
