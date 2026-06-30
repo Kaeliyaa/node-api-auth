@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/pool');
+const hashToken = require('../utils/hashToken');
 
 const router = express.Router();
 
@@ -87,8 +88,7 @@ router.post('/login', async (req, res, next) => {
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN }
       );
-      const crypto = require('crypto');
-      const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+      
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   
       await pool.query(
@@ -110,5 +110,33 @@ router.post('/login', async (req, res, next) => {
       next(err);
     }
   });
+
+// POST /auth/logout
+router.post('/logout', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const tokenHash = hashToken(token);
+
+    const result = await pool.query(
+      'DELETE FROM sessions WHERE token = $1 RETURNING session_id',
+      [tokenHash]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Session not found' });
+    }
+
+    res.json({ message: 'Logged out successfully' });
+
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;
