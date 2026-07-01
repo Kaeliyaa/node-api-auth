@@ -2,18 +2,11 @@ const express = require('express');
 const pool = require('../db/pool');
 const authMiddleware = require('../middleware/auth');
 
+const { verifySessionOwnership } = require('../services/ownership');
+
 const router = express.Router();
 
 router.use(authMiddleware);
-
-// Helper — confirms a session belongs to the logged-in user
-async function verifySessionOwnership(sessionId, userId) {
-  const result = await pool.query(
-    'SELECT session_id FROM sessions WHERE session_id = $1 AND user_id = $2',
-    [sessionId, userId]
-  );
-  return result.rows.length > 0;
-}
 
 // GET /results/:sessionId — list all results for a session
 router.get('/:sessionId', async (req, res, next) => {

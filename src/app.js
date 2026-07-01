@@ -1,10 +1,49 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const stripe = require('./services/stripe');
+const pool = require('./db/pool');
 
 const app = express();
 
 app.use(cors());
+
+// Stripe webhook needs raw body — register BEFORE express.json()
+app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object;
+      await pool.query(
+        `UPDATE purchases SET status = 'paid' WHERE stripe_payment_intent_id = $1`,
+        [paymentIntent.id]
+      );
+    }
+
+    if (event.type === 'payment_intent.payment_failed') {
+      const paymentIntent = event.data.object;
+      await pool.query(
+        `UPDATE purchases SET status = 'failed' WHERE stripe_payment_intent_id = $1`,
+        [paymentIntent.id]
+      );
+    }
+    
+    res.json({ received: true });
+  } catch (err) {
+    console.error('Webhook handler error:', err);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -27,6 +66,9 @@ app.use('/sessions', sessionsRoutes);
 
 const resultsRoutes = require('./routes/results');
 app.use('/results', resultsRoutes);
+
+const purchasesRoutes = require('./routes/purchases');
+app.use('/purchases', purchasesRoutes);
 
 // Global error handler — always last
 app.use((err, req, res, next) => {
