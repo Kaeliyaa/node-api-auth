@@ -6,6 +6,8 @@ const pool = require('./db/pool');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(cors());
 
 // Stripe webhook needs raw body — register BEFORE express.json()
@@ -73,10 +75,20 @@ const purchasesRoutes = require('./routes/purchases');
 app.use('/purchases', apiLimiter, purchasesRoutes)
 
 // Global error handler — always last
+// bottom of src/app.js, replacing your current error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
+  const statusCode = err.statusCode || 500;
+  const isOperational = err.isOperational || statusCode < 500;
+
+  console.error({
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
+
+  res.status(statusCode).json({
+    error: isOperational ? err.message : 'Something went wrong. Please try again.'
   });
 });
 
