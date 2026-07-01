@@ -36,7 +36,7 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
         [paymentIntent.id]
       );
     }
-    
+
     res.json({ received: true });
   } catch (err) {
     console.error('Webhook handler error:', err);
@@ -52,8 +52,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+const { authLimiter, apiLimiter } = require('./middleware/rateLimiters');
 const authRoutes = require('./routes/auth');
-app.use('/auth', authRoutes);
+app.use('/auth', authLimiter, authRoutes);
 
 const authMiddleware = require('./middleware/auth');
 
@@ -61,14 +62,15 @@ app.get('/protected', authMiddleware, (req, res) => {
   res.json({ message: 'You are authenticated', user_id: req.user.user_id });
 });
 
+
 const sessionsRoutes = require('./routes/sessions');
-app.use('/sessions', sessionsRoutes);
+app.use('/sessions', apiLimiter, sessionsRoutes);
 
 const resultsRoutes = require('./routes/results');
-app.use('/results', resultsRoutes);
+app.use('/results', apiLimiter, resultsRoutes);
 
 const purchasesRoutes = require('./routes/purchases');
-app.use('/purchases', purchasesRoutes);
+app.use('/purchases', apiLimiter, purchasesRoutes)
 
 // Global error handler — always last
 app.use((err, req, res, next) => {
