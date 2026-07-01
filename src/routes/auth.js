@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const passport = require('passport');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/pool');
@@ -325,6 +326,60 @@ router.post('/reset-password/confirm', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+/**
+ * @swagger
+ * /auth/google:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Start Google OAuth login flow
+ *     responses:
+ *       302: { description: Redirects to Google's consent screen }
+ */
+router.get('/google', passport.authenticate('google', {
+  scope: ['profile', 'email'],
+  session: false
+}));
+
+/**
+ * @swagger
+ * /auth/google/callback:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Google OAuth callback — issues JWT on success
+ *     responses:
+ *       200: { description: Returns user object and JWT }
+ *       401: { description: OAuth failed }
+ */
+router.get('/google/callback',
+  passport.authenticate('google', { session: false, failureRedirect: '/auth/google/failure' }),
+  async (req, res, next) => {
+    try {
+      const user = req.user;
+
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN
+      });
+
+      // same session-hashing pattern as your existing login route
+      const tokenHash = hashToken(token)
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      await pool.query(
+        `INSERT INTO sessions (user_id, token, expires_at)
+         VALUES ($1, $2, $3)`,
+        [user.user_id, tokenHash, expiresAt]
+      );
+
+      res.json({ user: { id: user.id, email: user.email }, token });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/google/failure', (req, res) => {
+  res.status(401).json({ error: 'Google authentication failed' });
 });
 
 module.exports = router;
