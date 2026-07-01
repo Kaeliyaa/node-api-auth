@@ -1,7 +1,6 @@
-// tests/auth.test.js
 const request = require('supertest');
 const app = require('../src/app');
-const pool = require('../src/db/pool'); // adjust to your actual db pool export
+const pool = require('../src/db/pool');
 
 // Mock Resend so tests never send real emails
 jest.mock('resend', () => ({
