@@ -33,7 +33,7 @@ Node.js · Express · PostgreSQL · JWT · Stripe · Resend · Passport.js · Je
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/node-auth-api.git
+git clone https://github.com/Kaeliyaa/node-auth-api.git
 cd node-auth-api
 npm install
 ```
@@ -151,6 +151,11 @@ Tests run against an isolated `authdb_test` database. External services (Resend,
 **Google OAuth uses account linking.** If a user registers with an email/password and later signs in with Google using the same email, the accounts are merged rather than duplicated. This is the correct production behavior; most OAuth implementations get this wrong.
 
 **OAuth callback returns JSON for API testing purposes.** A production deployment with a frontend would set the token as an `httpOnly` cookie on the redirect response rather than returning it in a JSON body, to avoid token exposure in browser history or server logs.
+
+## Documentation
+
+- **Interactive API docs**: [SwaggerHub](https://app.swaggerhub.com/apis/buddhidharmauniversi-270/node-auth-api/1.0.0)
+- **Postman collection**: Import [`postman_collection.json`](./postman_collection.json) into Postman to test all endpoints locally
 
 ## Known Limitations
 
