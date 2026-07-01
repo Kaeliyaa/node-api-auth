@@ -3,7 +3,9 @@ const validateEnv = require('./config/validateEnv');
 validateEnv();
 
 const express = require('express');
+
 const cors = require('cors');
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const stripe = require('./services/stripe');
@@ -11,9 +13,16 @@ const pool = require('./db/pool');
 
 const app = express();
 
+const helmet = require('helmet');
+app.use(helmet());
 app.set('trust proxy', 1);
 
-app.use(cors());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
+
+app.use(cors({
+  origin: allowedOrigins.length ? allowedOrigins : false,
+  credentials: true
+}));
 
 // Stripe webhook needs raw body — register BEFORE express.json()
 app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -68,11 +77,6 @@ app.use('/auth', authLimiter, authRoutes);
 
 const authMiddleware = require('./middleware/auth');
 
-app.get('/protected', authMiddleware, (req, res) => {
-  res.json({ message: 'You are authenticated', user_id: req.user.user_id });
-});
-
-
 const sessionsRoutes = require('./routes/sessions');
 app.use('/sessions', apiLimiter, sessionsRoutes);
 
@@ -100,7 +104,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+module.exports = app;
