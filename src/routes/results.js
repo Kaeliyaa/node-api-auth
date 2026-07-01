@@ -8,7 +8,23 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-// GET /results/:sessionId — list all results for a session
+/**
+ * @swagger
+ * /results/{sessionId}:
+ *   get:
+ *     tags: [Results]
+ *     summary: List all results for a session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Array of result objects }
+ *       404: { description: Session not found }
+ */
 router.get('/:sessionId', async (req, res, next) => {
   try {
     const owns = await verifySessionOwnership(req.params.sessionId, req.user.user_id);
@@ -30,7 +46,34 @@ router.get('/:sessionId', async (req, res, next) => {
   }
 });
 
-// POST /results/:sessionId — add a new result, enforcing 50-per-session cap
+/**
+ * @swagger
+ * /results/{sessionId}:
+ *   post:
+ *     tags: [Results]
+ *     summary: Add a named numerical result to a session (max 50 per session)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, value]
+ *             properties:
+ *               name: { type: string }
+ *               value: { type: number }
+ *     responses:
+ *       201: { description: Result created }
+ *       400: { description: Validation error or 50-result cap reached }
+ *       404: { description: Session not found }
+ */
 router.post('/:sessionId', async (req, res, next) => {
   try {
     const { name, value } = req.body;
@@ -72,7 +115,27 @@ router.post('/:sessionId', async (req, res, next) => {
   }
 });
 
-// DELETE /results/:sessionId/:resultId
+/**
+ * @swagger
+ * /results/{sessionId}/{resultId}:
+ *   delete:
+ *     tags: [Results]
+ *     summary: Delete a specific result
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: resultId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Result deleted }
+ *       404: { description: Session or result not found }
+ */
 router.delete('/:sessionId/:resultId', async (req, res, next) => {
   try {
     const owns = await verifySessionOwnership(req.params.sessionId, req.user.user_id);

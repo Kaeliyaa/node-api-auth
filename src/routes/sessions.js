@@ -7,7 +7,17 @@ const router = express.Router();
 // All routes here require authentication
 router.use(authMiddleware);
 
-// GET /sessions — list current user's sessions
+/**
+ * @swagger
+ * /sessions:
+ *   get:
+ *     tags: [Sessions]
+ *     summary: List current user's active sessions
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: Array of session objects }
+ */
 router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(
@@ -23,7 +33,23 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// DELETE /sessions/:id — revoke a specific session (e.g. "log out other device")
+/**
+ * @swagger
+ * /sessions/{id}:
+ *   delete:
+ *     tags: [Sessions]
+ *     summary: Revoke a specific session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Session revoked }
+ *       404: { description: Session not found }
+ */
 router.delete('/:id', async (req, res, next) => {
   try {
     const result = await pool.query(

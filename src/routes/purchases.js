@@ -8,6 +8,17 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
+/**
+ * @swagger
+ * /purchases:
+ *   get:
+ *     tags: [Purchases]
+ *     summary: List current user's purchases
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: Array of purchase objects }
+ */
 router.get('/', async (req, res, next) => {
   try {
     const result = await pool.query(
@@ -20,7 +31,64 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// POST /purchases/checkout — creates a real Stripe PaymentIntent
+/**
+ * @swagger
+ * /purchases/{id}:
+ *   get:
+ *     tags: [Purchases]
+ *     summary: Get a single purchase
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200: { description: Purchase object }
+ *       404: { description: Purchase not found }
+ */
+router.get('/:id', async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM purchases WHERE purchase_id = $1 AND user_id = $2`,
+      [req.params.id, req.user.user_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Purchase not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @swagger
+ * /purchases/checkout:
+ *   post:
+ *     tags: [Purchases]
+ *     summary: Create a Stripe PaymentIntent and a pending purchase record
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [session_id, amount]
+ *             properties:
+ *               session_id: { type: string }
+ *               amount: { type: number }
+ *     responses:
+ *       201: { description: Returns purchase object and Stripe client_secret }
+ *       400: { description: Validation error }
+ *       404: { description: Session not found }
+ */
 router.post('/checkout', async (req, res, next) => {
   const client = await pool.connect();
   try {

@@ -4,6 +4,8 @@ validateEnv();
 
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 const stripe = require('./services/stripe');
 const pool = require('./db/pool');
 
@@ -51,6 +53,9 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
 
 app.use(express.json());
 app.use(express.static('public'));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (req, res) => res.json(swaggerSpec))
 
 // Health check — useful for verifying the server is up
 app.get('/health', (req, res) => {

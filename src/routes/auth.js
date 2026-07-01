@@ -8,7 +8,27 @@ const { sendResetEmail } = require('../services/mailer');
 
 const router = express.Router();
 
-// POST /auth/register
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Create a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       201: { description: User created, returns user object and JWT }
+ *       400: { description: Validation error }
+ *       409: { description: Email already in use }
+ */
 router.post('/register', async (req, res, next) => {
   try {
     const { email: rawEmail, password } = req.body;
@@ -60,7 +80,26 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// POST /auth/login
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Log in and receive a JWT
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string }
+ *               password: { type: string }
+ *     responses:
+ *       200: { description: Returns user object and JWT }
+ *       401: { description: Invalid credentials }
+ */
 router.post('/login', async (req, res, next) => {
     try {
       const { email: rawEmail, password } = req.body;
@@ -113,7 +152,18 @@ router.post('/login', async (req, res, next) => {
     }
   });
 
-// POST /auth/logout
+  /**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Log out and invalidate the current session
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: Logged out successfully }
+ *       401: { description: No token provided or session not found }
+ */
 router.post('/logout', async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -141,7 +191,24 @@ router.post('/logout', async (req, res, next) => {
   }
 });
 
-// POST /auth/reset-password/request
+/**
+ * @swagger
+ * /auth/reset-password/request:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Request a password reset email
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string }
+ *     responses:
+ *       200: { description: Generic confirmation message (does not reveal if email exists) }
+ */
 router.post('/reset-password/request', async (req, res, next) => {
   try {
     const { email: rawEmail } = req.body;
@@ -195,7 +262,26 @@ router.post('/reset-password/request', async (req, res, next) => {
   }
 });
 
-// POST /auth/reset-password/confirm
+/**
+ * @swagger
+ * /auth/reset-password/confirm:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Complete a password reset using the emailed token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [resetToken, newPassword]
+ *             properties:
+ *               resetToken: { type: string }
+ *               newPassword: { type: string }
+ *     responses:
+ *       200: { description: Password reset successfully }
+ *       400: { description: Invalid or expired reset token }
+ */
 router.post('/reset-password/confirm', async (req, res, next) => {
   try {
     const { resetToken, newPassword } = req.body;
